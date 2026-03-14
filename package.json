@@ -1,0 +1,26 @@
+{
+  "name": "rest-in-push",
+  "version": "1.0.0",
+  "description": "A (slightly) cruel generator of programmer tombstones.",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test.js",
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iconquestion/rest-in-push.git"
+  },
+  "author": "iconquestion",
+  "license": "AGPL-3.0-only",
+  "bugs": {
+    "url": "https://github.com/iconquestion/rest-in-push/issues"
+  },
+  "homepage": "https://github.com/iconquestion/rest-in-push#readme",
+  "dependencies": {
+    "dotenv": "^17.3.1",
+    "envalid": "^8.1.1",
+    "express": "^5.2.1",
+    "winston": "^3.19.0"
+  }
+}
