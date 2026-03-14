@@ -2,10 +2,10 @@
   "name": "rest-in-push",
   "version": "1.0.0",
   "description": "A (slightly) cruel generator of programmer tombstones.",
-  "main": "index.js",
+  "main": "src/server.js",
   "scripts": {
-    "test": "node test.js",
-    "start": "node index.js"
+    "test": "node tests/test.js",
+    "start": "node src/server.js"
   },
   "repository": {
     "type": "git",

@@ -30,13 +30,24 @@ async function test_generate() {
         // 发起 GET 请求，获取随机生成的数据
         const response = await fetch(`http://localhost:${env.PORT}/generate`);
 
-        // 仅将 200 视为通过，其他状态码都视为失败
-        if (response.status !== 200) {
-            throw new Error(`Unexpected status code: ${response.status}`);
+        let data;
+        try {
+            // 优先按 JSON 解析，便于提取 message 字段
+            data = await response.json();
+        } catch (parseError) {
+            data = null;
         }
 
-        // 将响应体解析为 JSON 对象
-        const data = await response.json();
+        // 仅将 200 视为通过，其他状态码都视为失败
+        if (response.status !== 200) {
+            const responseMessage = data && typeof data.message === "string"
+                ? `, message: ${data.message}`
+                : "";
+            const responseData = data && Object.prototype.hasOwnProperty.call(data, "data")
+                ? `, data: ${JSON.stringify(data.data)}`
+                : "";
+            throw new Error(`Unexpected status code: ${response.status}${responseMessage}${responseData}`);
+        }
 
         // 仅当 message === "ok" 时视为通过
         if (!data || data.message !== "ok") {

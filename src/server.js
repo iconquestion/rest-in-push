@@ -13,6 +13,18 @@ const env = cleanEnv(process.env, {
     DEBUG: bool()
 });
 
+const projectRootDirectory = path.resolve(__dirname, "..");
+const logsDirectory = path.join(projectRootDirectory, "logs");
+const dataDirectory = path.join(projectRootDirectory, "data");
+const publicDirectory = path.join(projectRootDirectory, "public");
+
+if (!fs.existsSync(logsDirectory)) {
+    fs.mkdirSync(logsDirectory, { recursive: true });
+}
+
+const infoOnlyFilter = winston.format((info) => (info.level === "info" ? info : false));
+const errorOnlyFilter = winston.format((info) => (info.level === "error" ? info : false));
+
 /**
  * @author iconquestion
  * @description 创建应用日志记录器，统一输出到控制台和日志文件。
@@ -31,20 +43,40 @@ const logger = winston.createLogger({
     transports: [
         // 控制台输出，便于开发时观察
         new winston.transports.Console(),
-        // 文件输出，便于后续排障与审计
-        new winston.transports.File({ filename: "app.log" })
+        // info 日志单独输出
+        new winston.transports.File({
+            filename: path.join(logsDirectory, "info.log"),
+            format: winston.format.combine(
+                infoOnlyFilter(),
+                winston.format.timestamp(),
+                winston.format.printf(({ timestamp, level, message }) => {
+                    return `${timestamp} [${level.toUpperCase()}] ${message}`;
+                })
+            )
+        }),
+        // error 日志单独输出
+        new winston.transports.File({
+            filename: path.join(logsDirectory, "error.log"),
+            format: winston.format.combine(
+                errorOnlyFilter(),
+                winston.format.timestamp(),
+                winston.format.printf(({ timestamp, level, message }) => {
+                    return `${timestamp} [${level.toUpperCase()}] ${message}`;
+                })
+            )
+        })
     ]
 });
 
 /**
  * @author iconquestion
  * @description 从指定 JSON 文件读取并解析数据。
- * @param {string} data_path 相对项目根目录的数据文件路径。
+ * @param {string} data_file 数据目录下的文件名。
  * @returns {any} 解析后的 JSON 数据对象或数组。
  */
-function loadData(data_path) {
-    // 拼接绝对路径，避免运行目录变化导致读取失败
-    const filePath = path.join(__dirname, data_path);
+function loadData(data_file) {
+    // 始终从项目根目录下的 data 文件夹读取
+    const filePath = path.join(dataDirectory, data_file);
     // 同步读取文件，保证后续逻辑拿到完整内容
     const raw = fs.readFileSync(filePath, "utf-8");
     // 将 JSON 字符串解析为 JavaScript 数据
@@ -82,7 +114,7 @@ function pickRandomItems(arr, count = 3) {
  * @param {void} 无输入参数。
  * @returns {void} 无返回值。
  */
-app.use(express.static(path.join(__dirname, "static")));
+app.use(express.static(publicDirectory));
 
 /**
  * @author iconquestion
@@ -123,9 +155,9 @@ app.get("/status", (req, res) => {
 app.get("/generate", (req, res) => {
     try {
         // 分别从三个数据源中随机抽样
-        const what_you_have_done = pickRandomItems(loadData("data/what_you_have_done.json"), 3);
-        const death_reasons = pickRandomItems(loadData("data/death_reasons.json"), 1);
-        const reviews_from_others = pickRandomItems(loadData("data/reviews_from_others.json"), 3);
+        const what_you_have_done = pickRandomItems(loadData("what_you_have_done.json"), 3);
+        const death_reasons = pickRandomItems(loadData("death_reasons.json"), 1);
+        const reviews_from_others = pickRandomItems(loadData("reviews_from_others.json"), 3);
 
         // 统一返回生成后的结构化数据
         res.json({
