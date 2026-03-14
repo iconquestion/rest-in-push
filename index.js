@@ -1,81 +1,133 @@
-const express = require("express");
+﻿const express = require("express");
 const fs = require("fs");
 const path = require("path");
 const winston = require("winston");
-require("dotenv").config()
+require("dotenv").config();
 
 const app = express();
 
-const { cleanEnv, str, num, bool } = require("envalid")
+const { cleanEnv, num, bool } = require("envalid");
 
 const env = cleanEnv(process.env, {
     PORT: num(),
     DEBUG: bool()
-})
+});
 
-console.log(env.PORT)
-console.log(env.DEBUG)
-
-// ===== logger =====
+/**
+ * @author iconquestion
+ * @description 创建应用日志记录器，统一输出到控制台和日志文件。
+ * @param {void} 无输入参数。
+ * @returns {import("winston").Logger} Winston 日志实例。
+ */
 const logger = winston.createLogger({
     level: "info",
     format: winston.format.combine(
         winston.format.timestamp(),
+        // 自定义日志输出格式，便于定位时间与级别
         winston.format.printf(({ timestamp, level, message }) => {
             return `${timestamp} [${level.toUpperCase()}] ${message}`;
         })
     ),
     transports: [
+        // 控制台输出，便于开发时观察
         new winston.transports.Console(),
+        // 文件输出，便于后续排障与审计
         new winston.transports.File({ filename: "app.log" })
     ]
 });
 
-// ===== helpers =====
+/**
+ * @author iconquestion
+ * @description 从指定 JSON 文件读取并解析数据。
+ * @param {string} data_path 相对项目根目录的数据文件路径。
+ * @returns {any} 解析后的 JSON 数据对象或数组。
+ */
 function loadData(data_path) {
+    // 拼接绝对路径，避免运行目录变化导致读取失败
     const filePath = path.join(__dirname, data_path);
+    // 同步读取文件，保证后续逻辑拿到完整内容
     const raw = fs.readFileSync(filePath, "utf-8");
+    // 将 JSON 字符串解析为 JavaScript 数据
     return JSON.parse(raw);
 }
 
+/**
+ * @author iconquestion
+ * @description 从数组中随机抽取指定数量的元素。
+ * @param {any[]} arr 待抽取的数据数组。
+ * @param {number} [count=3] 需要抽取的元素个数。
+ * @returns {any[]} 随机抽取后的新数组。
+ */
 function pickRandomItems(arr, count = 3) {
+    // 兜底处理：非数组输入直接返回空数组
     if (!Array.isArray(arr)) return [];
 
+    // 复制数组，避免修改原始数据
     const copied = [...arr];
 
-    // Fisher–Yates shuffle
+    // 使用 Fisher-Yates 算法原地打乱复制数组
     for (let i = copied.length - 1; i > 0; i--) {
+        // 在 [0, i] 区间内随机选取一个下标进行交换
         const j = Math.floor(Math.random() * (i + 1));
         [copied[i], copied[j]] = [copied[j], copied[i]];
     }
 
+    // 返回打乱后前 count 个元素
     return copied.slice(0, count);
 }
 
-// ===== middleware =====
-app.use(express.json());
+/**
+ * @author iconquestion
+ * @description 提供静态资源访问，允许直接加载前端页面。
+ * @param {void} 无输入参数。
+ * @returns {void} 无返回值。
+ */
+app.use(express.static(path.join(__dirname, "static")));
 
+/**
+ * @author iconquestion
+ * @description 记录每次请求的方法和路径。
+ * @param {import("express").Request} req Express 请求对象。
+ * @param {import("express").Response} res Express 响应对象。
+ * @param {import("express").NextFunction} next Express 中间件放行函数。
+ * @returns {void} 无返回值。
+ */
 app.use((req, res, next) => {
+    // 输出本次请求信息到日志
     logger.info(`${req.method} ${req.url}`);
+    // 交给下一个中间件或路由处理
     next();
 });
 
-// ===== routes =====
-
-// 健康检查
+/**
+ * @author iconquestion
+ * @description 健康检查接口，确认服务是否正常运行。
+ * @param {import("express").Request} req Express 请求对象。
+ * @param {import("express").Response} res Express 响应对象。
+ * @returns {void} 无返回值。
+ */
 app.get("/status", (req, res) => {
+    // 返回固定成功消息
     res.json({
         message: "ok"
     });
 });
 
-// 简单生成一个组合结果
+/**
+ * @author iconquestion
+ * @description 随机组合数据并返回生成结果。
+ * @param {import("express").Request} req Express 请求对象。
+ * @param {import("express").Response} res Express 响应对象。
+ * @returns {void} 无返回值。
+ */
 app.get("/generate", (req, res) => {
     try {
+        // 分别从三个数据源中随机抽样
         const what_you_have_done = pickRandomItems(loadData("data/what_you_have_done.json"), 3);
         const death_reasons = pickRandomItems(loadData("data/death_reasons.json"), 1);
         const reviews_from_others = pickRandomItems(loadData("data/reviews_from_others.json"), 3);
 
+        // 统一返回生成后的结构化数据
         res.json({
             message: "ok",
             data: {
@@ -85,7 +137,9 @@ app.get("/generate", (req, res) => {
             }
         });
     } catch (error) {
+        // 记录异常信息，便于定位问题
         logger.error(`GET /generate failed: ${error.message}`);
+        // DEBUG 模式返回具体错误，生产模式隐藏细节
         res.status(500).json({
             message: "Error generating data",
             data: env.DEBUG ? error.message : undefined
@@ -93,14 +147,27 @@ app.get("/generate", (req, res) => {
     }
 });
 
-// 404
+/**
+ * @author iconquestion
+ * @description 兜底处理未匹配的路由请求。
+ * @param {import("express").Request} req Express 请求对象。
+ * @param {import("express").Response} res Express 响应对象。
+ * @returns {void} 无返回值。
+ */
 app.use((req, res) => {
+    // 返回标准 404 响应
     res.status(404).json({
         message: "Route not found"
     });
 });
 
-// ===== start =====
+/**
+ * @author iconquestion
+ * @description 启动 HTTP 服务并输出启动日志。
+ * @param {void} 无输入参数。
+ * @returns {void} 无返回值。
+ */
 app.listen(env.PORT, () => {
+    // 提示服务监听地址
     logger.info(`Server running at http://localhost:${env.PORT}`);
 });
