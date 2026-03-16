@@ -236,7 +236,3 @@ logs/error.log
 MIT License
 
 ---
-
-# 作者
-
-iconquestion
