@@ -16,8 +16,6 @@ const env = cleanEnv(process.env, {
 const projectRootDirectory = path.resolve(__dirname, "..");
 const logsDirectory = path.join(projectRootDirectory, "logs");
 const dataDirectory = path.join(projectRootDirectory, "data");
-const publicDirectory = path.join(projectRootDirectory, "public");
-const nodeModulesDirectory = path.join(projectRootDirectory, "node_modules");
 
 if (!fs.existsSync(logsDirectory)) {
     fs.mkdirSync(logsDirectory, { recursive: true });
@@ -111,14 +109,6 @@ function pickRandomItems(arr, count = 3) {
 
 /**
  * @author iconquestion
- * @description 提供静态资源访问，允许直接加载前端页面。
- * @param {void} 无输入参数。
- * @returns {void} 无返回值。
- */
-app.use(express.static(publicDirectory));
-
-/**
- * @author iconquestion
  * @description 记录每次请求的方法和路径。
  * @param {import("express").Request} req Express 请求对象。
  * @param {import("express").Response} res Express 响应对象。
@@ -179,8 +169,6 @@ app.get("/generate", (req, res) => {
         });
     }
 });
-
-app.use('/bootstrap', express.static('node_modules/bootstrap'))
 
 /**
  * @author iconquestion
