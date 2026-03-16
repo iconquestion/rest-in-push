@@ -17,6 +17,7 @@ const projectRootDirectory = path.resolve(__dirname, "..");
 const logsDirectory = path.join(projectRootDirectory, "logs");
 const dataDirectory = path.join(projectRootDirectory, "data");
 const publicDirectory = path.join(projectRootDirectory, "public");
+const nodeModulesDirectory = path.join(projectRootDirectory, "node_modules");
 
 if (!fs.existsSync(logsDirectory)) {
     fs.mkdirSync(logsDirectory, { recursive: true });
@@ -178,6 +179,8 @@ app.get("/generate", (req, res) => {
         });
     }
 });
+
+app.use('/bootstrap', express.static('node_modules/bootstrap'))
 
 /**
  * @author iconquestion
