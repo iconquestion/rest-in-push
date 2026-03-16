@@ -3,13 +3,7 @@
 一个带有黑色幽默风格的小网站：
 点击按钮，随机生成一组“程序员墓志铭”。
 
-生成内容包括：
-
-* **你做过的事**
-* **死亡原因**
-* **他人评价**
-
-所有文案均来自本地 JSON 数据，通过 Node.js + Express 随机组合生成。
+![demo](./images/demo1.png)
 
 ---
 
@@ -33,45 +27,6 @@
 - 写过很多草稿代码
 - 打开 IDE 的次数远超写代码次数
 ```
-
----
-
-# 项目结构
-
-```
-REST-IN-PUSH
-│
-├─ data/                   # 数据源
-│  ├─ death_reasons.json
-│  ├─ reviews_from_others.json
-│  └─ what_you_have_done.json
-│
-├─ public/                 # 前端页面
-│  └─ index.html
-│
-├─ src/
-│  └─ server.js            # 后端服务入口
-│
-├─ logs/                   # 日志文件
-│  ├─ info.log
-│  └─ error.log
-│
-├─ .env                    # 环境变量
-├─ package.json
-├─ package-lock.json
-├─ README.md
-└─ LICENSE
-```
-
----
-
-# 技术栈
-
-* Node.js
-* Express
-* Winston (日志)
-* Envalid (环境变量校验)
-* 原生 HTML + JavaScript
 
 ---
 
@@ -112,22 +67,8 @@ DEBUG=true
 
 # 启动项目
 
-开发模式：
-
-```bash
-node src/server.js
-```
-
-或者：
-
 ```bash
 npm start
-```
-
-启动后访问：
-
-```
-http://localhost:3000
 ```
 
 ---
@@ -228,11 +169,5 @@ logs/error.log
 4. 返回 API 结果
 
 随机算法使用 **Fisher–Yates shuffle**。
-
----
-
-# License
-
-MIT License
 
 ---
